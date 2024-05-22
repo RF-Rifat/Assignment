@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import app from "./app";
 import config from "./config";
+import app from "./app"; 
 
 async function main() {
   try {
@@ -9,7 +9,8 @@ async function main() {
       console.log(`Server is running on port ${config.port}`);
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error starting server:", error);
   }
 }
+
 main();
