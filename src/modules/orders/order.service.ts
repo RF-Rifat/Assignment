@@ -12,21 +12,21 @@ export const createOrder = async (orderData: IOrder): Promise<IOrder> => {
     const product = await Product.findById(productId);
     if (!product) {
       throw new Error("Product not found");
-    
     }
-    if (product.quantityInStock < quantity) {
+
+    if (product.inventory.quantity < quantity) {
       throw new Error("Insufficient quantity available in inventory");
     }
 
-    product.quantityInStock -= quantity;
-    product.inStock = product.quantityInStock > 0;
+    product.inventory.quantity -= quantity;
+    product.inventory.inStock = product.inventory.quantity > 0;
     await product.save();
 
     // Create the order
     const newOrder = new Order(orderData);
     const savedOrder = await newOrder.save();
     return savedOrder;
-  } catch (error:any) {
+  } catch (error: any) {
     throw new Error(error.message);
   }
 };
