@@ -1,3 +1,4 @@
+
 # Assignment-2
 
 This is a Node.js application built with TypeScript, MongoDB (Mongoose), and Express.
@@ -9,7 +10,8 @@ Before running the application, make sure you have Node.js and npm (or yarn) ins
 1. **Clone the repository:**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/RF-Rifat/Assignment.git
+   
    cd assignment-2
    ```
 
