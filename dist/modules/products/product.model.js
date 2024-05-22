@@ -23,7 +23,27 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateProductUpdateData = exports.validateProductData = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const zod_1 = require("zod");
+const variantSchemaZod = zod_1.z.object({
+    type: zod_1.z.string().nonempty(),
+    value: zod_1.z.string().nonempty(),
+});
+const inventorySchemaZod = zod_1.z.object({
+    quantity: zod_1.z.number().min(0),
+    inStock: zod_1.z.boolean(),
+});
+const productSchemaZod = zod_1.z.object({
+    name: zod_1.z.string().nonempty(),
+    description: zod_1.z.string().nonempty(),
+    price: zod_1.z.number().positive(),
+    category: zod_1.z.string().nonempty(),
+    tags: zod_1.z.array(zod_1.z.string().nonempty()).optional(),
+    variants: zod_1.z.array(variantSchemaZod),
+    inventory: inventorySchemaZod,
+});
+// Define Mongoose schemas
 const variantSchema = new mongoose_1.Schema({
     type: { type: String, required: true },
     value: { type: String, required: true },
@@ -42,4 +62,12 @@ const productSchema = new mongoose_1.Schema({
     inventory: { type: inventorySchema, required: true },
 });
 const Product = mongoose_1.default.model("Product", productSchema);
+const validateProductData = (data) => {
+    return productSchemaZod.parse(data);
+};
+exports.validateProductData = validateProductData;
+const validateProductUpdateData = (data) => {
+    return productSchemaZod.partial().parse(data);
+};
+exports.validateProductUpdateData = validateProductUpdateData;
 exports.default = Product;

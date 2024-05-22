@@ -1,34 +1,51 @@
-import Order from "./order.model"; // Adjust import path as needed
+import Order, { validateOrderData } from "./order.model";
 import { IOrder } from "./order.interface";
 import Product from "../products/product.model";
 
-
 // Create a new order
 export const createOrder = async (orderData: IOrder): Promise<IOrder> => {
-  try {
-    const { productId, quantity } = orderData;
+  // Validate the order data
+  const validatedData = validateOrderData(orderData);
 
-    // Check if product exists
-    const product = await Product.findById(productId);
-    if (!product) {
-      throw new Error("Product not found");
-    }
+  const { productId, quantity } = validatedData;
 
-    if (product.inventory.quantity < quantity) {
-      throw new Error("Insufficient quantity available in inventory");
-    }
-
-    product.inventory.quantity -= quantity;
-    product.inventory.inStock = product.inventory.quantity > 0;
-    await product.save();
-
-    // Create the order
-    const newOrder = new Order(orderData);
-    const savedOrder = await newOrder.save();
-    return savedOrder;
-  } catch (error: any) {
-    throw new Error(error.message);
+  // Check if product exists
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
   }
+
+  // Calculate the quantity in stock
+  const calculateQuantityInStock = (product: any): number => {
+    let totalQuantity = product.inventory.quantity; // Start with main inventory quantity
+
+    // Add quantities from each variant
+    if (product.variants && product.variants.length > 0) {
+      product.variants.forEach((variant: { quantity: number }) => {
+        if (variant.quantity) {
+          totalQuantity += variant.quantity;
+        }
+      });
+    }
+
+    return totalQuantity;
+  };
+
+  const quantityInStock = calculateQuantityInStock(product);
+
+  if (quantityInStock < quantity) {
+    throw new Error("Insufficient quantity available in inventory");
+  }
+
+  // Update the product's inventory
+  product.inventory.quantity -= quantity;
+  product.inventory.inStock = product.inventory.quantity > 0;
+  await product.save();
+
+  // Create the order
+  const newOrder = new Order(validatedData);
+  const savedOrder = await newOrder.save();
+  return savedOrder;
 };
 
 // Retrieve all orders
@@ -36,7 +53,7 @@ export const getAllOrders = async (): Promise<IOrder[]> => {
   try {
     const orders = await Order.find();
     return orders;
-  } catch (error:any) {
+  } catch (error: any) {
     throw new Error(`Failed to fetch orders: ${error.message}`);
   }
 };
@@ -48,7 +65,7 @@ export const getOrdersByUserEmail = async (
   try {
     const orders = await Order.find({ email });
     return orders;
-  } catch (error:any) {
+  } catch (error: any) {
     throw new Error(
       `Failed to fetch orders for email ${email}: ${error.message}`
     );
@@ -60,7 +77,7 @@ export const getOrderById = async (orderId: string): Promise<IOrder | null> => {
   try {
     const order = await Order.findById(orderId);
     return order;
-  } catch (error:any) {
+  } catch (error: any) {
     throw new Error(
       `Failed to fetch order with ID ${orderId}: ${error.message}`
     );
@@ -72,15 +89,18 @@ export const updateOrderById = async (
   orderId: string,
   updateData: Partial<IOrder>
 ): Promise<IOrder | null> => {
+  // Validate the update data
+  const validatedData = validateOrderData(updateData);
+
   try {
-    const updatedOrder = await Order.findByIdAndUpdate(orderId, updateData, {
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, validatedData, {
       new: true,
     });
     if (!updatedOrder) {
       throw new Error("Order not found");
     }
     return updatedOrder;
-  } catch (error:any) {
+  } catch (error: any) {
     throw new Error(error.message);
   }
 };

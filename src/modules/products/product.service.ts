@@ -1,5 +1,9 @@
 import { IProduct } from "./product.interface";
-import Product from "./product.model";
+import Product, {
+  validateProductData,
+  validateProductUpdateData,
+} from "./product.model";
+import { z } from "zod";
 
 class DatabaseError extends Error {
   constructor(message: string) {
@@ -13,10 +17,17 @@ export const createProduct = async (
   productData: IProduct
 ): Promise<IProduct> => {
   try {
+    // Validate the product data
+    validateProductData(productData);
+
     const product = await Product.create(productData);
     return product;
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof z.ZodError) {
+      throw new DatabaseError(
+        `Validation error: ${error.errors.map((e) => e.message).join(", ")}`
+      );
+    } else if (error instanceof Error) {
       throw new DatabaseError(`Error creating product: ${error.message}`);
     } else {
       throw new DatabaseError("Unknown error occurred while creating product");
@@ -95,12 +106,19 @@ export const updateProduct = async (
   updateData: Partial<IProduct>
 ): Promise<IProduct | null> => {
   try {
+    // Validate the update data
+    validateProductUpdateData(updateData);
+
     const product = await Product.findByIdAndUpdate(productId, updateData, {
       new: true,
     });
     return product;
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof z.ZodError) {
+      throw new DatabaseError(
+        `Validation error: ${error.errors.map((e) => e.message).join(", ")}`
+      );
+    } else if (error instanceof Error) {
       throw new DatabaseError(
         `Error updating product with ID ${productId}: ${error.message}`
       );

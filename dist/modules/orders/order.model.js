@@ -23,13 +23,26 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateOrderData = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const zod_1 = require("zod");
+const orderSchemaZod = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    productId: zod_1.z.string().refine((id) => mongoose_1.Types.ObjectId.isValid(id), {
+        message: "Invalid productId format",
+    }),
+    price: zod_1.z.number().positive(),
+    quantity: zod_1.z.number().min(1),
+});
 const OrderSchema = new mongoose_1.Schema({
     email: { type: String, required: true },
-    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },
 });
-// Create a model using the schema
 const Order = mongoose_1.default.model("Order", OrderSchema);
+const validateOrderData = (data) => {
+    return orderSchemaZod.parse(data);
+};
+exports.validateOrderData = validateOrderData;
 exports.default = Order;
